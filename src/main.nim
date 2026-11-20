@@ -3,6 +3,8 @@ import lspbase
 import jsonrpc
 import handlers
 
+import protocol/window # TODO: Cleanup, this is just testing
+
 var lspCtx = LspContext()
 
 lsplog("=============================")
@@ -17,6 +19,13 @@ while true:
                 handleInitialize(lspCtx, rpcRequest)
             of "initialized":
                 lsplog("Successfully initialized.")
+                writeRpcNotification(
+                    "window/logMessage", 
+                    LspShowWindow(
+                        `type`: ord(LWTInfo),
+                        message: "Nimony-LSP initialized..."
+                    )
+                )
             
             # TODO: Handle below properly
             of "shutdown":
@@ -33,6 +42,8 @@ while true:
             
             else:
                 lsplog("Unsupported", rpcRequest.methodName)
+                if rpcRequest.id >= 0:
+                    writeRpcError(rpcRequest.id, RECMethodNotFound, "Method not found")
     
     except ErrorCode as e:
         lsplog("Error:", e)
