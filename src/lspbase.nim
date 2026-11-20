@@ -2,7 +2,7 @@ import std/syncio
 import std/strutils
 import shared
 
-proc lspbaseReadRaw*(): string {.raises.} =
+proc readRawMessage*(): string {.raises.} =
     var contentLength = -1
     var isFirstLine = true
     while true:
