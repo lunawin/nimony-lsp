@@ -11,12 +11,12 @@ proc readRawMessage*(): string {.raises.} =
             if isFirstLine:
                 raise ErrorCode.EndOfStreamError
             break
-        if currentLine.startsWith("content-length: "):
-            let numberString = currentLine[len("content-length: ") .. ^1]
+        if currentLine.startsWith("content-length:"):
+            let numberString = currentLine[len("content-length:") .. ^1].strip()
             contentLength = numberString.parseInt()
         isFirstLine = false
 
-    if contentLength < 0:
+    if contentLength <= 0:
         raise ErrorCode.ProtocolError
     
     result = newString(contentLength)
@@ -31,3 +31,12 @@ proc readRawMessage*(): string {.raises.} =
         if newlyReadBytes <= 0:
             raise ErrorCode.EndOfStreamError
         totalReadBytes += newlyReadBytes
+
+proc writeRawMessage*(message: string) {.raises.} =
+    var toWrite = ""
+    toWrite &= "Content-Length: " & $(message.len) & "\r\n"
+    toWrite &= "\r\n"
+    toWrite &= message
+
+    stdout.write(toWrite)
+    stdout.flushFile()
