@@ -1,5 +1,7 @@
 import std/syncio
 
+type LspContext* = ref object
+
 proc lsplog*(items: varargs[string, `$`]) =
     var to_write = "Nimony-LSP: "
     for item in items:
