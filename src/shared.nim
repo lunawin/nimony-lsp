@@ -7,11 +7,15 @@ import documents
 type LspContext* = ref object
     shuttingDown*: bool
     documents*: LspDocuments
+    rootPath*: string
+    rootUri*: string
 
 proc newLspContext*(): LspContext =
     result = LspContext(
         shuttingDown: false,
-        documents: newLspDocuments()
+        documents: newLspDocuments(),
+        rootPath: "",
+        rootUri: ""
     )
 
 proc lsplog*(items: varargs[string, `$`]) =

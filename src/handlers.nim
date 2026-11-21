@@ -3,9 +3,13 @@ import shared
 import jsonrpc
 import protocol/lifecycle
 import documents
+import diagnostics
 
 proc handleInitialize*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
     lsplog("Was asked to initialize")
+    lspCtx.rootPath = request.parameters.getField("rootPath").getStr()
+    lspCtx.rootUri = request.parameters.getField("rootUri").getStr()
+    
     var response = LspInitializeResponse(
         capabilities: LspCapabilities(
             textDocumentSync: LspCapabilitiesDocumentSync(
@@ -34,7 +38,7 @@ proc handleDidOpen*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
     var documentText = textDocument.getField("text").getStr()
 
     lspCtx.documents.addDocument(documentUri, documentVersion, documentType, documentText)
-    # TODO: nimony check
+    lspPublishDiagnostics(lspCtx, documentUri)
 
 proc handleDidClose*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
     if request.parameters.kind != JObject:
@@ -60,8 +64,7 @@ proc handleDidChange*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
         for k, v2 in v.pairs:
             if k == "text":
                 lspCtx.documents.updateDocument(documentUri, documentVersionNew, v2.getStr())
-    
-    # TODO: nimony check
+    lspPublishDiagnostics(lspCtx, documentUri)
 
 proc handleDidSave*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
     if request.parameters.kind != JObject:
@@ -70,5 +73,4 @@ proc handleDidSave*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
     if textDocument.kind != JObject:
         return
     var documentUri = textDocument.getField("uri").getStr()
-    
-    # TODO: Nimony check
+    lspPublishDiagnostics(lspCtx, documentUri)

@@ -1,6 +1,10 @@
 import std/osproc
 import std/strutils
 import std/syncio
+import std/uri
+import std/tables
+import shared
+import jsonrpc
 
 type LspNimonyCheckResult = object
     path: string
@@ -9,6 +13,24 @@ type LspNimonyCheckResult = object
     charNo: int
     shortMessage: string
     details: string
+
+type DiagnosticPosition = object
+    line: int
+    character: int
+
+type DiagnosticRange = object
+    start: DiagnosticPosition
+    `end`: DiagnosticPosition
+
+type Diagnostic = object
+    `range`: DiagnosticRange
+    severity: int
+    source: string
+    message: string
+
+type LspDiagnostics = object
+    uri*: string
+    diagnostics*: seq[Diagnostic]
 
 const dummyCheckResult = LspNimonyCheckResult(path: "!!DUMMY!!", lineNo: -1, charNo: -1, shortMessage: "!!DUMMY!!", details: "!!DUMMY!!")
 const markers = ["Error:", "Trace:"]
@@ -80,3 +102,54 @@ proc lspGetCheckDiagnostics(workingDirectory: string, path: string): seq[LspNimo
     if processingCheckResult:
         result.add(currentCheckResult)
     process.close()
+
+proc getAbsolute(rootPath: string, path: string): string =
+    var path2 = path.replace("\\", "/")
+    if (path2.len >= 3) and (path2[1] == ':') and (path2[2] == '/'):
+        return path
+    else:
+        return rootPath & "/" & path2
+
+proc lspPublishDiagnostics*(lspCtx: LspContext, recentlyModifiedFileUri: string) {.raises.} =
+    if not recentlyModifiedFileUri.startsWith("file:///"):
+        return
+    var partialPath = recentlyModifiedFileUri[(len("file:///")) .. ^1]
+    var filePath = decodeUrl(partialPath, false)
+    var checkResults = lspGetCheckDiagnostics(lspCtx.rootPath, filePath)
+
+    var uriToDiagnostics = initTable[string, seq[Diagnostic]]()
+    for document in uncheckedBorrow(lspCtx.documents.documents).keys:
+        var doc = lspCtx.documents.documents[document]
+        uriToDiagnostics[doc.uri] = @[]
+
+    for checkResult in checkResults:
+        var path = getAbsolute(lspCtx.rootPath.replace("\\", "/"), checkResult.path)
+        var uri = "file:///" & encodeUrl(path, false).replace("%2F", "/")
+        if uri notin uriToDiagnostics:
+            uriToDiagnostics[uri] = @[]
+
+        var positionStart = DiagnosticPosition(line: checkResult.lineNo-1, character: checkResult.charNo-1)
+        var positionEnd = DiagnosticPosition(line: positionStart.line, character: positionStart.character + 5)
+        var severity = 0
+
+        if checkResult.logType == "Error":
+            severity = 1
+        else:
+            severity = 3
+        
+        var diagnostic = Diagnostic(
+            `range`: DiagnosticRange(start: positionStart, `end`: positionEnd),
+            severity: severity,
+            source: "Nimony-LSP",
+            message: checkResult.shortMessage & "\n" & checkResult.details
+        )
+        uriToDiagnostics[uri].add(diagnostic)
+    
+    for k, v in uriToDiagnostics.pairs:
+        writeRpcNotification(
+            "textDocument/publishDiagnostics",
+            LspDiagnostics(
+                uri: k,
+                diagnostics: v
+            )
+        )
