@@ -3,9 +3,7 @@ import lspbase
 import jsonrpc
 import handlers
 
-import protocol/window # TODO: Cleanup, this is just testing
-
-var lspCtx = LspContext()
+var lspCtx = newLspContext()
 
 lsplog("=============================")
 lsplog("LSP is currently running now.")
@@ -14,21 +12,24 @@ while true:
     try:
         let rpcRequest = readRpcMessage()
 
+        if lspCtx.shuttingdDown:
+            if rpcRequest.methodName == "exit":
+                lsplog("Was asked to exit.")
+                break
+            else:
+                if rpcRequest.id >= 0:
+                    writeRpcError(rpcRequest.id, RECInvalidRequest, "Invalid request.")
+                continue
+
         case rpcRequest.methodName
             of "initialize":
                 handleInitialize(lspCtx, rpcRequest)
             of "initialized":
                 lsplog("Successfully initialized.")
-                writeRpcNotification(
-                    "window/logMessage", 
-                    LspShowWindow(
-                        `type`: ord(LWTInfo),
-                        message: "Nimony-LSP initialized..."
-                    )
-                )
-            
+
             # TODO: Handle below properly
             of "shutdown":
+                lspCtx.shuttingdDown = true
                 lsplog("Was asked to shutdown.")
                 var toWrite = ""
                 toWrite &= """{"jsonrpc": "2.0", """
@@ -37,7 +38,7 @@ while true:
                 toWrite &= "}"
                 writeRawMessage(toWrite)
             of "exit":
-                lsplog("Was asked to exit.")
+                lsplog("Was asked to exit without shutdown.")
                 break
             
             else:

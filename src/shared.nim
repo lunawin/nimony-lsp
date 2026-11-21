@@ -1,6 +1,12 @@
 import std/syncio
 
 type LspContext* = ref object
+    shuttingDown*: bool
+
+proc newLspContext*(): LspContext =
+    result = LspContext(
+        shuttingDown: false
+    )
 
 proc lsplog*(items: varargs[string, `$`]) =
     var to_write = "Nimony-LSP: "
