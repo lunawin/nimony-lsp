@@ -1,3 +1,5 @@
 bin/*
 nimcache
 .vscode
+test.nim
+outer.nim
