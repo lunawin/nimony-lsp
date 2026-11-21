@@ -49,6 +49,9 @@ while true:
             
             of "textDocument/didChange":
                 handleDidChange(lspCtx, rpcRequest)
+            
+            of "textDocument/didSave":
+                handleDidSave(lspCtx, rpcRequest)
 
             else:
                 lsplog("Unsupported", rpcRequest.methodName)

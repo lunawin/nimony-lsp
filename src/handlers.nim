@@ -62,3 +62,13 @@ proc handleDidChange*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
                 lspCtx.documents.updateDocument(documentUri, documentVersionNew, v2.getStr())
     
     # TODO: nimony check
+
+proc handleDidSave*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
+    if request.parameters.kind != JObject:
+        return
+    var textDocument = request.parameters.getField("textDocument")
+    if textDocument.kind != JObject:
+        return
+    var documentUri = textDocument.getField("uri").getStr()
+    
+    # TODO: Nimony check
