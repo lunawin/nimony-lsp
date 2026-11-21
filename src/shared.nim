@@ -1,6 +1,8 @@
 import std/tables
 import std/syncio
 import std/json
+import std/strutils
+import std/uri
 import nifcore
 import documents
 
@@ -40,3 +42,15 @@ proc getField*(node: JsonNode, key: string): JsonNode =
             if k == key:
                 return v
     return nullNode()
+
+
+proc getAbsolute*(rootPath: string, path: string): string =
+    var path2 = path.replace("\\", "/")
+    if (path2.len >= 3) and (path2[1] == ':') and (path2[2] == '/'):
+        return path
+    else:
+        return rootPath & "/" & path2
+
+proc getFilePathFromUri*(uri: string): string {.raises.} =
+    var partialPath = uri[len("file:///") .. ^1]
+    result = decodeUrl(partialPath, false)

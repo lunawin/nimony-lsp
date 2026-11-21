@@ -5,6 +5,7 @@ type LspCapabilitiesDocumentSync* = object
 
 type LspCapabilities* = object
     textDocumentSync*: LspCapabilitiesDocumentSync
+    definitionProvider*: bool
 
 type LspInformation* = object
     name*: string

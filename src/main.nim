@@ -2,6 +2,7 @@ import shared
 import lspbase
 import jsonrpc
 import handlers
+import definitions
 
 var lspCtx = newLspContext()
 
@@ -52,6 +53,9 @@ while true:
             
             of "textDocument/didSave":
                 handleDidSave(lspCtx, rpcRequest)
+            
+            of "textDocument/definition":
+                handleDefinition(lspCtx, rpcRequest)
 
             else:
                 lsplog("Unsupported", rpcRequest.methodName)

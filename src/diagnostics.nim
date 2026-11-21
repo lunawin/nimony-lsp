@@ -80,7 +80,6 @@ proc isFillerLine(line: string): bool =
     return false
 
 proc lspGetCheckDiagnostics(workingDirectory: string, path: string): seq[LspNimonyCheckResult] {.raises.} =
-    var command = "nimony check \"" & path & "\""
     var process = startProcess("nimony", workingDirectory, @["check", path])
 
     var processingCheckResult = false
@@ -103,18 +102,10 @@ proc lspGetCheckDiagnostics(workingDirectory: string, path: string): seq[LspNimo
         result.add(currentCheckResult)
     process.close()
 
-proc getAbsolute(rootPath: string, path: string): string =
-    var path2 = path.replace("\\", "/")
-    if (path2.len >= 3) and (path2[1] == ':') and (path2[2] == '/'):
-        return path
-    else:
-        return rootPath & "/" & path2
-
 proc lspPublishDiagnostics*(lspCtx: LspContext, recentlyModifiedFileUri: string) {.raises.} =
     if not recentlyModifiedFileUri.startsWith("file:///"):
         return
-    var partialPath = recentlyModifiedFileUri[(len("file:///")) .. ^1]
-    var filePath = decodeUrl(partialPath, false)
+    var filePath = getFilePathFromUri(recentlyModifiedFileUri)
     var checkResults = lspGetCheckDiagnostics(lspCtx.rootPath, filePath)
 
     var uriToDiagnostics = initTable[string, seq[Diagnostic]]()
@@ -129,7 +120,7 @@ proc lspPublishDiagnostics*(lspCtx: LspContext, recentlyModifiedFileUri: string)
             uriToDiagnostics[uri] = @[]
 
         var positionStart = DiagnosticPosition(line: checkResult.lineNo-1, character: checkResult.charNo-1)
-        var positionEnd = DiagnosticPosition(line: positionStart.line, character: positionStart.character + 5)
+        var positionEnd = DiagnosticPosition(line: positionStart.line+1, character: 0)
         var severity = 0
 
         if checkResult.logType == "Error":

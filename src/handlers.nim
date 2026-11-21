@@ -16,7 +16,8 @@ proc handleInitialize*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
                 openClose: true,
                 change: 1,
                 save: true
-            )
+            ),
+            definitionProvider: true
         ),
         serverInfo: LspInformation(
             name: "Nimony-LSP",
