@@ -24,3 +24,7 @@ proc addDocument*(lspdocs: LspDocuments, uri: string, version: int, languageId: 
 
 proc removeDocument*(lspdocs: LspDocuments, uri: string) =
     lspdocs.documents.del uri
+
+proc updateDocument*(lspdocs: LspDocuments, uri: string, newVersion: int, newText: string) {.raises.} =
+    lspdocs.documents[uri].version = newVersion
+    lspdocs.documents[uri].text = newText

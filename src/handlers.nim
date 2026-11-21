@@ -44,3 +44,21 @@ proc handleDidClose*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
         return
     var documentUri = textDocument.getField("uri").getStr()
     lspCtx.documents.removeDocument(documentUri)
+
+proc handleDidChange*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
+    if request.parameters.kind != JObject:
+        return
+    var textDocument = request.parameters.getField("textDocument")
+    var documentUri = textDocument.getField("uri").getStr()
+    var documentVersionNew = textDocument.getField("version").getInt()
+
+    if documentUri notin lspCtx.documents.documents:
+        return
+
+    var contentChanges = request.parameters.getField("contentChanges")
+    for v in contentChanges.items:
+        for k, v2 in v.pairs:
+            if k == "text":
+                lspCtx.documents.updateDocument(documentUri, documentVersionNew, v2.getStr())
+    
+    # TODO: nimony check
