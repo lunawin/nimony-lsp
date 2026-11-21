@@ -12,7 +12,7 @@ while true:
     try:
         let rpcRequest = readRpcMessage()
 
-        if lspCtx.shuttingdDown:
+        if lspCtx.shuttingDown:
             if rpcRequest.methodName == "exit":
                 lsplog("Was asked to exit.")
                 break
@@ -29,7 +29,7 @@ while true:
 
             # TODO: Handle below properly
             of "shutdown":
-                lspCtx.shuttingdDown = true
+                lspCtx.shuttingDown = true
                 lsplog("Was asked to shutdown.")
                 var toWrite = ""
                 toWrite &= """{"jsonrpc": "2.0", """
@@ -41,6 +41,9 @@ while true:
                 lsplog("Was asked to exit without shutdown.")
                 break
             
+            of "textDocument/didOpen":
+                handleDidOpen(lspCtx, rpcRequest)
+
             else:
                 lsplog("Unsupported", rpcRequest.methodName)
                 if rpcRequest.id >= 0:
