@@ -43,6 +43,9 @@ while true:
             
             of "textDocument/didOpen":
                 handleDidOpen(lspCtx, rpcRequest)
+            
+            of "textDocument/didClose":
+                handleDidClose(lspCtx, rpcRequest)
 
             else:
                 lsplog("Unsupported", rpcRequest.methodName)

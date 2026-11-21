@@ -21,3 +21,6 @@ proc addDocument*(lspdocs: LspDocuments, uri: string, version: int, languageId: 
         languageId: languageId,
         text: text
     )
+
+proc removeDocument*(lspdocs: LspDocuments, uri: string) =
+    lspdocs.documents.del uri

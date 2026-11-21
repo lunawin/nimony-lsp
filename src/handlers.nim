@@ -35,3 +35,12 @@ proc handleDidOpen*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
 
     lspCtx.documents.addDocument(documentUri, documentVersion, documentType, documentText)
     # TODO: nimony check
+
+proc handleDidClose*(lspCtx: LspContext, request: RpcRequest) {.raises.} =
+    if request.parameters.kind != JObject:
+        return
+    var textDocument = request.parameters.getField("textDocument")
+    if textDocument.kind != JObject:
+        return
+    var documentUri = textDocument.getField("uri").getStr()
+    lspCtx.documents.removeDocument(documentUri)
